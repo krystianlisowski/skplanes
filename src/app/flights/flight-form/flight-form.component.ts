@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { Crew } from 'src/app/models/flight.model';
+import { Crew, Flight } from 'src/app/models/flight.model';
 
 @Component({
   selector: 'app-flight-form',
@@ -8,7 +8,7 @@ import { Crew } from 'src/app/models/flight.model';
   styleUrls: ['./flight-form.component.scss']
 })
 export class FlightFormComponent implements OnInit {
-
+  @Input() editMode = false;
   form: FormGroup;
   jobs = [
     { label: 'Stwaredess', value: 'stweradess'},
@@ -16,7 +16,7 @@ export class FlightFormComponent implements OnInit {
     { label: 'Pilot', value:'pilot'},
     { label: 'Co-Pilot', value: 'co_pilot'},
     { label: 'Mechanic', value: 'mechanic'}
-  ];
+  ]
 
   constructor(private formBuilder: FormBuilder) { }
 
@@ -24,34 +24,46 @@ export class FlightFormComponent implements OnInit {
     this.buildForm();
   }
 
-  buildCrewMember() {
-    return this.formBuilder.group({
-      name: '',
-      job: ''
-    })
+  setFlight(flight: Flight) {
+    const {key, ...formData} = flight;
+    this.form.patchValue(formData);
+    formData.crew.forEach(crewMember => this.addCrewMember(crewMember));
   }
 
-  get crew(){
+  get crew() {
     return this.form.get('crew') as FormArray;
   }
 
-  removeCrewMember(index: number){
-    this.crew.removeAt(index);
+  removeCrewMember(i: number) {
+    this.crew.removeAt(i);
   }
 
-  addCrewMember(){
-    this.crew.push(this.buildCrewMember());
+  addCrewMember(crewMember?: Crew) {
+    this.crew.push(this.buildCrewMember(crewMember));
   }
-  private buildForm(){
+
+  buildCrewMember(crewMember: Crew = {} as Crew) {
+    return this.formBuilder.group({
+      name: crewMember.name || '',
+      job: crewMember.job || ''
+    });
+  }
+
+  private buildForm() {
     this.form = this.formBuilder.group({
-      code: ['SK', {validators: [Validators.required, Validators.minLength(4), Validators.maxLength(8)]}],
-      origin: ['', {validators: [Validators.required]}],
-      destination: ['', {validators: [Validators.required]}],
-      departureTime: ['', {validators: [Validators.required]}],
-      returnTime: ['', {validators: [Validators.required]}],
+      origin: ['', { validators: [Validators.required] }],
+      destination: ['', { validators: [Validators.required] }],
+      departureTime: ['', { validators: [Validators.required] }],
+      returnTime: ['', { validators: [Validators.required] }],
+      code: ['SK', {
+        validators: [
+          Validators.required,
+          Validators.minLength(4),
+          Validators.maxLength(7),
+        ] }],
       additionalInformation: '',
       withSK: false,
-      crew: this.formBuilder.array([this.buildCrewMember()])
-    });
+      crew: this.formBuilder.array(this.editMode ? [] : [this.buildCrewMember()])
+    })
   }
 }
